@@ -2,7 +2,7 @@ import openai
 import streamlit as st
 import asyncio
 
-st.title("ChatGPT-like Clone")
+st.title("xD")
 
 # Streamlit secret key handling
 openai.api_key = st.secrets["OPENAI_API_KEY"]
