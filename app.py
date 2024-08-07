@@ -1,14 +1,13 @@
 import openai
 import streamlit as st
-from openai import AsyncOpenAI
+import asyncio
 
 st.title("ChatGPT-like Clone")
 
 # Streamlit secret key handling
 openai.api_key = st.secrets["OPENAI_API_KEY"]
 
-client = AsyncOpenAI()
-
+client = openai
 
 if "openai_model" not in st.session_state:
     st.session_state["openai_model"] = "gpt-3.5-turbo"
@@ -20,19 +19,30 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-if prompt := st.chat_input("What is up?"):
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
+async def get_response():
+    prompt = st.session_state.messages[-1]["content"]
+    response = await client.ChatCompletion.acreate(
+        model=st.session_state["openai_model"],
+        messages=[
+            {"role": m["role"], "content": m["content"]}
+            for m in st.session_state.messages
+        ]
+    )
+    return response.choices[0].message["content"]
 
-    with st.chat_message("assistant"):
-        stream = client.chat.completions.create(
-            model=st.session_state["openai_model"],
-            messages=[
-                {"role": m["role"], "content": m["content"]}
-                for m in st.session_state.messages
-            ],
-            stream=True,
-        )
-        response = st.write_stream(stream)
-    st.session_state.messages.append({"role": "assistant", "content": response})
+def main():
+    if prompt := st.chat_input("What is up?"):
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
+
+        with st.chat_message("assistant"):
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            response = loop.run_until_complete(get_response())
+            st.markdown(response)
+        
+        st.session_state.messages.append({"role": "assistant", "content": response})
+
+if __name__ == "__main__":
+    main()
