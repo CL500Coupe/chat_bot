@@ -1,5 +1,6 @@
 import openai
 import streamlit as st
+from openai import AsyncOpenAI
 
 st.title("ChatGPT-like Clone")
 
